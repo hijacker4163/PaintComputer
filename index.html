@@ -59,12 +59,7 @@
 			
 			let PP = 7500 / um;
 			let coatingMeters = 0;
-			// K30 材質的特殊規則                
-			if (material === "K30") {
-				coatingMeters = um > 15 ? 1000 : 2000;
-			} else {
-				coatingMeters = um >= 15 ? 1000 : 2000;
-			}
+			coatingMeters = um > 15 ? 1000 : 2000;
 
 			let buckets = (coatingMeters / PP) * sheets;
 			totalBuckets += buckets;

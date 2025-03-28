@@ -43,7 +43,7 @@
 			let sheets = parseFloat(sheetsInput.value) || 0;
 
 			if (!isNaN(um)) {
-				let coatingMeters = (um <= 15) ? 2000 : 1000; // 15um以下2000米，15um以上1000米
+				let coatingMeters = (um <= 15) ? 2000 : 1000; // 15um（包含15）以下2000米，15um以上1000米
 				let PP = 7500 / um; // 每個um需要多少桶
 				let requiredBuckets = 0;
 				if (sheets > 0) {
