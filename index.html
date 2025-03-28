@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>塗料計算器(桶數)</title>
+    <style>
+        label {
+            color: blue; /* 設定標籤顏色 */
+            font-weight: bold;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .inputGroup {
+            margin-bottom: 10px;
+        }
+        .divider {
+            border-top: 2px solid #007bff;
+            margin: 10px 0;
+        }
+        /* 滑動效果 */
+        .container {
+            display: flex;
+            transition: transform 0.3s ease;
+        }
+        .menu {
+            width: 300px;
+            background-color: #f4f4f4;
+            padding: 20px;
+            box-shadow: 2px 0px 5px rgba(0,0,0,0.1);
+        }
+        .listView {
+            flex: 1;
+            background-color: #ffffff;
+            padding: 20px;
+        }
+        .slide-in {
+            transform: translateX(0);
+        }
+        .slide-out {
+            transform: translateX(-300px);
+        }
+    </style>
+</head>
+<body>
+    <h2>塗料計算器(桶數)</h2>
+    
+    <button onclick="toggleMenu()">Menu</button>
+    
+    <div class="container slide-out" id="container">
+        <div class="menu">
+            <h3>Menu</h3>
+            <button onclick="gotoNumber()">塗料計算器(張數)</button>
+        </div>
+        <div class="listView">
+            <h3>塗料計算器</h3>
+            <div class="divider"></div>
+            <label id="ruleAbove15" style="color: red;">＊15um(含)以上：1000米</label>
+            <br>
+            <label id="ruleBelow15" style="color: red;">＊15um以下：2000米</label>    
+            <br>    
+            <div class="divider"></div>
+            <label for="material">選擇材質：</label>
+            <select id="material" onchange="updateRules()">
+                <option value="K322">K322</option>
+                <option value="K30">K30</option>
+            </select>
+            <br><br>
+            <button onclick="addInput()">新增輸入</button>
+            <br>
+            <div id="inputContainer">
+                <div class="inputGroup">
+                    <label for="um">輸入塗層厚度 (um)：</label>
+                    <input type="number" class="um" min="1">
+                    &emsp;<label for="sheets">張數：</label>
+                    <input type="number" class="sheets" min="1" value="1">
+                    <button onclick="removeInput(this)">刪除</button>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <br>    
+            <label for="num_div">欲計算顆數，請輸入除數：</label>
+            <input type="number" class="num_div" min="1">
+            <button onclick="calculateCoating()">計算</button>
+            <h3>結果：</h3>
+            <p id="result"></p>
+        </div>
+    </div>
+
+    <script>
+        let menuVisible = false;
+
+        function toggleMenu() {
+            const container = document.getElementById("container");
+            if (menuVisible) {
+                container.classList.remove("slide-in");
+                container.classList.add("slide-out");
+            } else {
+                container.classList.remove("slide-out");
+                container.classList.add("slide-in");
+            }
+            menuVisible = !menuVisible;
+        }
+
+        function gotoNumber() {
+			// 跳轉到 number.html 頁面
+			window.location.href = "number.html";
+		}
+
+        function addInput() {
+            let container = document.getElementById("inputContainer");
+            let div = document.createElement("div");
+            div.classList.add("inputGroup");
+            div.innerHTML = `
+                <label for="um">輸入塗層厚度 (um)：</label>
+                <input type="number" class="um" min="1">
+                &emsp;<label for="sheets">張數：</label>
+                <input type="number" class="sheets" min="1" value="1">
+                <button onclick="removeInput(this)">刪除</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeInput(button) {
+            button.parentElement.remove();
+        }
+
+        function calculateCoating() {
+            let material = document.getElementById("material").value;
+            let inputs = document.querySelectorAll(".inputGroup");
+            let totalBuckets = 0;
+            let resultText = "";
+            let number = 0;
+            let num_div = parseInt(document.querySelector(".num_div").value);
+            
+            let resultTable = `
+                <table border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th>組別</th>
+                            <th>um</th>
+                            <th>張數</th>
+                            <th>需要桶數</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            inputs.forEach((group, index) => {
+                let um = parseFloat(group.querySelector(".um").value);
+                let sheets = parseInt(group.querySelector(".sheets").value);
+                
+                if (isNaN(um) || um <= 0 || isNaN(sheets) || sheets <= 0) {
+                    resultTable += `
+                        <tr style="color: red;">
+                            <td colspan="4">輸入錯誤（組 ${index + 1}）</td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let PP = 7500 / um;
+                let coatingMeters = 0;
+                // K30 材質的特殊規則                
+                if (material === "K30") {
+                    coatingMeters = um > 15 ? 1000 : 2000;
+                } else {
+                    coatingMeters = um >= 15 ? 1000 : 2000;
+                }
+
+                let buckets = (coatingMeters / PP) * sheets;
+                totalBuckets += buckets;
+
+                resultTable += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${um}</td>
+                        <td>${sheets}</td>
+                        <td>${buckets.toFixed(2)} 桶</td>
+                    </tr>
+                `;
+            });
+            
+            number = totalBuckets / num_div;
+            
+            resultTable += `
+                    </tbody>
+                </table>
+                <br>
+                <strong>總共需要桶數：約 ${totalBuckets.toFixed(2)} 桶, ${number.toFixed(2)} 顆</strong>
+            `;
+            document.getElementById("result").innerHTML = resultTable;
+        }
+
+        function updateRules() {
+            let material = document.getElementById("material").value;
+            let ruleAbove15 = document.getElementById("ruleAbove15");
+            let ruleBelow15 = document.getElementById("ruleBelow15");
+    
+            if (material === "K30") {
+                ruleAbove15.innerHTML = "＊15um以上：1000米"; // K30 規則
+                ruleBelow15.innerHTML = "＊15um(含)以下：2000米";
+            } else {
+                ruleAbove15.innerHTML = "＊15um(含)以上：1000米"; // K322 規則
+                ruleBelow15.innerHTML = "＊15um以下：2000米";
+            }
+        }
+    </script>
+</body>
+</html>
