@@ -1,182 +1,166 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>塗料計算器(張數)</title>
-    <style>
-        label {
-            color: blue; /* 設定標籤顏色 */
-            font-weight: bold;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .inputGroup {
-            margin-bottom: 10px;
-        }
-        .divider {
-            border-top: 2px solid #007bff;
-            margin: 10px 0;
-        }
-        /* 滑動效果 */
-        .container {
-            display: flex;
-            transition: transform 0.3s ease;
-        }
-        .menu {
-            width: 300px;
-            background-color: #f4f4f4;
-            padding: 20px;
-            box-shadow: 2px 0px 5px rgba(0,0,0,0.1);
-        }
-        .listView {
-            flex: 1;
-            background-color: #ffffff;
-            padding: 20px;
-        }
-        .slide-in {
-            transform: translateX(0);
-        }
-        .slide-out {
-            transform: translateX(-300px);
-        }
-    </style>
-</head>
-<body>
-    <h2>塗料計算器（張數）</h2>
-    
-    <button onclick="toggleMenu()">Menu</button>
-    
-    <div class="container slide-out" id="container">
-    	<div class="menu">
-            <h3>Menu</h3>
-            <button onclick="gotoNumber()">塗料計算器(桶數)</button>
-        </div>
-    	<div class="listView">
-			<div class="divider"></div>
-			<label id="ruleAbove15" style="color: red;">＊15以上：1000米</label>
-			<br>
-			<label id="ruleBelow15" style="color: red;">＊15um(含)以下：2000米</label>    
-			<br>    
-			<div class="divider"></div>
-			<label for="material">選擇材質：</label>
-			<select id="material" onchange="calculateRemaining()">
-				<option value="K342">K342</option>
-			</select>
-			<br><br>
-			<label for="num_pieces">輸入顆數：</label>
-			<input type="number" id="num_pieces" min="1" onchange="calculateRemaining()">
-			<label for="multiplier">轉換成桶數的乘數：</label>
-			<input type="number" id="multiplier" min="1" step="0.1" value="9.5" onchange="calculateRemaining()">
-			<br><br>
-			<button onclick="addInput()">新增輸入</button>
-			<br>
-			<div id="inputContainer"></div>
-			<div class="divider"></div>
-			<h3>結果：</h3>
-			<p id="result"></p>
-		</div>
-    </div>
+<!DOCTYPE HTML>
 
-    <script>
-    	let menuVisible = false;
+<!-- <script src="../lib/js/jquery.1.9.1.js"></script> -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript">
+	let remainingBuckets = 0; // 初始剩餘桶數
 
-        function toggleMenu() {
-            const container = document.getElementById("container");
-            if (menuVisible) {
-                container.classList.remove("slide-in");
-                container.classList.add("slide-out");
-            } else {
-                container.classList.remove("slide-out");
-                container.classList.add("slide-in");
-            }
-            menuVisible = !menuVisible;
-        }
+	function addInput() {
+		let container = document.getElementById("inputContainer");
+		let div = document.createElement("div");
+		div.classList.add("inputGroup");
+		div.innerHTML = `
+			<a>輸入塗層厚度 (um)：</a>
+			<input type="number" class="um" min="1" onchange="calculateRemaining()">
+			&emsp;<a>張數：</a>
+			<input type="number" class="sheets" min="1" onchange="calculateRemaining()">
+			<button onclick="removeInput(this)">刪除</button>
+		`;
+		container.appendChild(div);
+	}
 
-        function gotoNumber() {
-			// 跳轉到 number.html 頁面
-			window.location.href = "index.html";
-		}
+	function removeInput(button) {
+		button.parentElement.remove();
+		calculateRemaining();
+	}
+
+	function calculateRemaining() {
+		let numPieces = parseInt(document.getElementById("num_pieces").value) || 0;
+		let multiplier = parseFloat(document.getElementById("multiplier").value) || 1;
+		remainingBuckets = numPieces * multiplier; // 計算總桶數
+
+		let inputs = document.querySelectorAll(".inputGroup");
+		let usedBuckets = 0;
+		let calculationDetails = "<table border='1' style='width:100%;text-align:center;'>";
+		calculationDetails += "<tr><th>um</th><th>張數</th><th>使用桶數</th></tr>";
 		
-        let remainingBuckets = 0; // 初始剩餘桶數
+		let re = 0;
+		
+		inputs.forEach(group => {
+			re = remainingBuckets - usedBuckets;
+			let um = parseFloat(group.querySelector(".um").value);
+			let sheetsInput = group.querySelector(".sheets");
+			let sheets = parseFloat(sheetsInput.value) || 0;
 
-        function addInput() {
-            let container = document.getElementById("inputContainer");
-            let div = document.createElement("div");
-            div.classList.add("inputGroup");
-            div.innerHTML = `
-                <label for="um">輸入塗層厚度 (um)：</label>
-                <input type="number" class="um" min="1" onchange="calculateRemaining()">
-                &emsp;<label for="sheets">張數：</label>
-                <input type="number" class="sheets" min="1" onchange="calculateRemaining()">
-                <button onclick="removeInput(this)">刪除</button>
-            `;
-            container.appendChild(div);
-        }
+			if (!isNaN(um)) {
+				let coatingMeters = (um <= 15) ? 2000 : 1000; // 15um以下2000米，15um以上1000米
+				let PP = 7500 / um; // 每個um需要多少桶
+				let requiredBuckets = 0;
+				if (sheets > 0) {
+					// 根據張數計算所需的桶數
+					requiredBuckets = (coatingMeters / PP) * sheets;
+					// 更新剩餘桶數
+					usedBuckets += requiredBuckets;
+					console.log("usedBuckets:",usedBuckets);
+				} else {
+					// 根據剩餘桶數來計算可支持的張數
+					let maxSheets = (re * PP) / coatingMeters;
+					sheetsInput.value = maxSheets.toFixed(2); // 顯示計算出來的張數
+					sheets = maxSheets;
+					requiredBuckets = re;
+					usedBuckets += requiredBuckets;
+				}
+				
+				// 更新表格顯示
+				calculationDetails += `<tr><td>${um}</td><td>${sheets.toFixed(2)}</td><td>${requiredBuckets.toFixed(2)}</td></tr>`;
+			}
+		});
 
-        function removeInput(button) {
-            button.parentElement.remove();
-            calculateRemaining();
-        }
+		// 計算剩餘桶數，避免變成負數
+		let remaining = Math.max(remainingBuckets - usedBuckets, 0); // 確保剩餘桶數不會為負數
+		calculationDetails += `</table><br><strong>剩餘桶數：${remaining.toFixed(2)}</strong>`;
+		document.getElementById("result").innerHTML = calculationDetails;
+	}
+</script>
 
-        function calculateRemaining() {
-            let numPieces = parseInt(document.getElementById("num_pieces").value) || 0;
-            let multiplier = parseFloat(document.getElementById("multiplier").value) || 1;
-            remainingBuckets = numPieces * multiplier; // 計算總桶數
+<html>
+	<head>
+		<title>塗料計算器(張數)</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css?ver=1.0" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+		<!-- Wrapper -->
+			<div id="wrapper">
 
-            let inputs = document.querySelectorAll(".inputGroup");
-            let usedBuckets = 0;
-            let calculationDetails = "<table border='1' style='width:100%;text-align:center;'>";
-            calculationDetails += "<tr><th>um</th><th>張數</th><th>使用桶數</th></tr>";
-			
-			let re = 0;
-			
-            inputs.forEach(group => {
-            	re = remainingBuckets - usedBuckets;
-                let um = parseFloat(group.querySelector(".um").value);
-                let sheetsInput = group.querySelector(".sheets");
-                let sheets = parseFloat(sheetsInput.value) || 0;
+				<!-- Header -->
+					<header id="header">
+						<div class="inner">
 
-                if (!isNaN(um)) {
-                    let coatingMeters = (um <= 15) ? 2000 : 1000; // 15um以下2000米，15um以上1000米
-                    let PP = 7500 / um; // 每個um需要多少桶
-                    let requiredBuckets = 0;
-                    if (sheets > 0) {
-                        // 根據張數計算所需的桶數
-                        requiredBuckets = (coatingMeters / PP) * sheets;
-                        // 更新剩餘桶數
-                        usedBuckets += requiredBuckets;
-                        console.log("usedBuckets:",usedBuckets);
-                    } else {
-                        // 根據剩餘桶數來計算可支持的張數
-                        let maxSheets = (re * PP) / coatingMeters;
-                        sheetsInput.value = maxSheets.toFixed(2); // 顯示計算出來的張數
-                        sheets = maxSheets;
-                        requiredBuckets = re;
-                        usedBuckets += requiredBuckets;
-                    }
-                    
-                    // 更新表格顯示
-                    calculationDetails += `<tr><td>${um}</td><td>${sheets.toFixed(2)}</td><td>${requiredBuckets.toFixed(2)}</td></tr>`;
-                }
-            });
+							<!-- Logo -->
+								<a href="index.html" class="logo">
+									<span class="title">塗料計算器(張數)</span>
+								</a>
 
-            // 計算剩餘桶數，避免變成負數
-            let remaining = Math.max(remainingBuckets - usedBuckets, 0); // 確保剩餘桶數不會為負數
-            calculationDetails += `</table><br><strong>剩餘桶數：${remaining.toFixed(2)}</strong>`;
-            document.getElementById("result").innerHTML = calculationDetails;
-        }
-    </script>
-</body>
+							<!-- Nav -->
+								<nav>
+									<ul>
+										<li><a href="#menu">Menu</a></li>
+									</ul>
+								</nav>
+
+						</div>
+					</header>
+
+				<!-- Menu -->
+					<nav id="menu">
+						<h2>Menu</h2>
+						<ul>
+							<li><a href="index.html">塗料計算器(桶數)</a></li>
+							<li><a href="number.html">塗料計算器(張數)</a></li>
+						</ul>
+					</nav>
+
+				<!-- Main -->
+					<div id="main">
+						<div class="inner">
+							<label id="ruleAbove15" style="color: red;">＊15以上：1000米</label>
+							<br>
+							<label id="ruleBelow15" style="color: red;">＊15um(含)以下：2000米</label>     
+							<br>    
+							<div class="divider"></div>
+							<a>選擇材質：</a>
+							<select id="material" onchange="updateRules()">
+								<option value="K342">K342</option>
+							</select>
+							<br><br>
+							<a>輸入顆數：</a>
+							<input type="number" id="num_pieces" min="1" onchange="calculateRemaining()">
+							<a>轉換成桶數的乘數：</a>
+							<input type="number" id="multiplier" min="1" step="0.1" value="9.5" onchange="calculateRemaining()">
+							<br><br>
+							<button onclick="addInput()">新增輸入</button>						
+							<div id="inputContainer"></div>
+							<br>
+							<br>
+							<div class="divider"></div>
+							<h3>結果：</h3>
+							<p id="result"></p>
+						</div>
+					</div>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<div class="inner">
+							
+							<section>
+							</section>
+
+							<ul class="copyright">								
+							</ul>
+						</div>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
 </html>
