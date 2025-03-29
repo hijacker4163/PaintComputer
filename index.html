@@ -90,6 +90,7 @@
         let ruleAbove15 = document.getElementById("ruleAbove15");
         let ruleBelow15 = document.getElementById("ruleBelow15");
         let numDivInput = document.querySelector(".num_div");
+        let materialCap = document.getElementById("materialCap");
         
         // 定義材質對應的數值
         let materialValues = {
@@ -106,7 +107,7 @@
             
             "K252": 2,
             
-            "K272-2": 5,
+            "K272-5": 5,
                         
             "X253": 15,
             
@@ -121,6 +122,19 @@
         if (materialValues.hasOwnProperty(material)) {
             numDivInput.value = materialValues[material];
         }
+        
+        if (material == "K342I") {
+        	materialCap.innerHTML = "10桶（通常算9.5）";
+        }
+        else if (material == "K342H")	{
+	        materialCap.innerHTML = "10桶（通常算9.5）";
+	    }
+	    else if (material == "K252") {
+	        materialCap.innerHTML = "第一顆2桶，第二顆開始2.3";	    
+	    }
+	    else {
+	    materialCap.innerHTML = "";	    
+	    }
         
         ruleAbove15.innerHTML = "＊15um以上：1000米";
         ruleBelow15.innerHTML = "＊15um(含)以下：2000米";
@@ -174,8 +188,8 @@
 							<br>
 							<label id="ruleBelow15" style="color: red;">＊15um(含)以下：2000米</label>    
 							<br>    
-							<div class="divider"></div>
-							<a>選擇材質：</a>
+							<div class="divider"></div>							
+							<a>選擇材質：</a><label id="materialCap" style="color: blue;">10桶（通常算9.5）</label>
 							<select id="material" onchange="updateRules()">
 								<option value="K342I">K342(配方I)</option>							
 								<option value="K342H">K342(配方H)</option>							
