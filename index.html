@@ -86,17 +86,44 @@
 	}
 
 	function updateRules() {
-		let material = document.getElementById("material").value;
-		let ruleAbove15 = document.getElementById("ruleAbove15");
-		let ruleBelow15 = document.getElementById("ruleBelow15");
-
-		if (material === "K30") {
-			ruleAbove15.innerHTML = "＊15um以上：1000米"; // K30 規則
-			ruleBelow15.innerHTML = "＊15um(含)以下：2000米";
-		} else {
-			ruleAbove15.innerHTML = "＊15um(含)以上：1000米"; // K322 規則
-			ruleBelow15.innerHTML = "＊15um以下：2000米";
-		}
+        let material = document.getElementById("material").value;
+        let ruleAbove15 = document.getElementById("ruleAbove15");
+        let ruleBelow15 = document.getElementById("ruleBelow15");
+        let numDivInput = document.querySelector(".num_div");
+        
+        // 定義材質對應的數值
+        let materialValues = {
+            "K342I": 9.5,
+            "K342H": 9.5,            
+            "K32": 9.5,
+            "K30": 7,
+            "K302S": 9,
+            "K262": 9,
+            "K322": 8,
+            "K88": 4,
+            "K272-2": 3,
+            "K222": 3,
+            
+            "K252": 2,
+            
+            "K272-2": 5,
+                        
+            "X253": 15,
+            
+            "K212W": 15,
+            "K257": 7,
+            "Y831": 5,
+            "Y283": 9,
+            "Y293": 9
+        };
+        
+        // 設定對應的數值
+        if (materialValues.hasOwnProperty(material)) {
+            numDivInput.value = materialValues[material];
+        }
+        
+        ruleAbove15.innerHTML = "＊15um以上：1000米";
+        ruleBelow15.innerHTML = "＊15um(含)以下：2000米";
 	}
 </script>
 
@@ -143,15 +170,37 @@
 				<!-- Main -->
 					<div id="main">
 						<div class="inner">
-							<label id="ruleAbove15" style="color: red;">＊15um(含)以上：1000米</label>
+							<label id="ruleAbove15" style="color: red;">＊15um以上：1000米</label>
 							<br>
-							<label id="ruleBelow15" style="color: red;">＊15um以下：2000米</label>    
+							<label id="ruleBelow15" style="color: red;">＊15um(含)以下：2000米</label>    
 							<br>    
 							<div class="divider"></div>
 							<a>選擇材質：</a>
 							<select id="material" onchange="updateRules()">
-								<option value="K322">K322</option>
+								<option value="K342I">K342(配方I)</option>							
+								<option value="K342H">K342(配方H)</option>							
+																
+								<option value="K32">K32</option>
 								<option value="K30">K30</option>
+								<option value="K302S">K302S</option>																
+								<option value="K262">K262</option>
+								<option value="K322">K322</option>
+																								
+								<option value="K88">K88</option>
+								<option value="K272-2">K272(機台48-2)</option>
+								<option value="K222">K222</option>
+								<option value="K252">K252</option>
+								
+								<option value="K272-5">K272(機台48-5)</option>
+								
+								<option value="X253">X253</option>
+								
+								<option value="K212W">K212W</option>
+								<option value="K257">K257</option>
+								
+								<option value="Y831">Y831</option>
+								<option value="Y283">Y283</option>
+								<option value="Y293">Y293</option>																																																																																
 							</select>
 							<br><br>
 							<button onclick="addInput()">新增輸入</button>
@@ -174,6 +223,7 @@
 							<input type="number" class="num_div" min="1">
 							<button onclick="calculateCoating()">計算</button>
 							<br>
+							<a style="color: red;">ex. K252 使用兩顆時應改為(2 + 2.3 = 4.3)</a>
 							<br>
 							<div class="divider"></div>							
 							<h3>結果：</h3>
