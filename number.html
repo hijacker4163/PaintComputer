@@ -25,6 +25,10 @@
 	}
 
 	function calculateRemaining() {
+		let total_number = document.getElementById("total_number");
+		let material = document.getElementById("material").value;
+		let numDivInput = document.getElementById("multiplier");
+		
 		let numPieces = parseInt(document.getElementById("num_pieces").value) || 0;
 		let multiplier = parseFloat(document.getElementById("multiplier").value) || 1;
 		remainingBuckets = numPieces * multiplier; // 計算總桶數
@@ -35,6 +39,21 @@
 		calculationDetails += "<tr><th>um</th><th>張數</th><th>使用桶數</th></tr>";
 		
 		let re = 0;
+				
+// 		let totalNum = numPieces * multiplier
+		if (material == "K252") {
+			if (numPieces == 1) {
+				numDivInput.value = 2;
+				multiplier = 2
+				remainingBuckets = 2 + (numPieces - 1) * multiplier;
+			}
+			else if (numPieces > 1) {			
+				numDivInput.value = 2.3;
+				multiplier = 2.3
+				remainingBuckets = 2 + (numPieces - 1) * multiplier;
+			}
+		}
+		total_number.innerHTML = "總桶數："+remainingBuckets.toFixed(2);
 		
 		inputs.forEach(group => {
 			re = remainingBuckets - usedBuckets;
@@ -71,6 +90,120 @@
 		calculationDetails += `</table><br><strong>剩餘桶數：${remaining.toFixed(2)}</strong>`;
 		document.getElementById("result").innerHTML = calculationDetails;
 	}
+	
+	function calculateCoating() {
+		let material = document.getElementById("material").value;
+		let inputs = document.querySelectorAll(".inputGroup");
+		let totalBuckets = 0;
+		let resultText = "";
+		let number = 0;
+		let num_div = parseInt(document.querySelector(".num_div").value);
+		
+		let resultTable = `
+			<table border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
+				<thead>
+					<tr style="background-color: #f2f2f2;">
+						<th>組別</th>
+						<th>um</th>
+						<th>張數</th>
+						<th>需要桶數</th>
+					</tr>
+				</thead>
+				<tbody>
+		`;
+		
+		inputs.forEach((group, index) => {
+			let um = parseFloat(group.querySelector(".um").value);
+			let sheets = parseInt(group.querySelector(".sheets").value);
+			
+			if (isNaN(um) || um <= 0 || isNaN(sheets) || sheets <= 0) {
+				resultTable += `
+					<tr style="color: red;">
+						<td colspan="4">輸入錯誤（組 ${index + 1}）</td>
+					</tr>
+				`;
+				return;
+			}
+			
+			let PP = 7500 / um;
+			let coatingMeters = 0;
+			coatingMeters = um > 15 ? 1000 : 2000;
+
+			let buckets = (coatingMeters / PP) * sheets;
+			totalBuckets += buckets;
+
+			resultTable += `
+				<tr>
+					<td>${index + 1}</td>
+					<td>${um}</td>
+					<td>${sheets}</td>
+					<td>${buckets.toFixed(2)} 桶</td>
+				</tr>
+			`;
+		});
+		
+		number = totalBuckets / num_div;
+		
+		resultTable += `
+				</tbody>
+			</table>
+			<br>
+			<strong>總共需要桶數：約 ${totalBuckets.toFixed(2)} 桶, ${number.toFixed(2)} 顆</strong>
+		`;
+		document.getElementById("result").innerHTML = resultTable;
+	}
+
+	function updateRules() {
+        let material = document.getElementById("material").value;
+        let numDivInput = document.getElementById("multiplier");
+        let materialCap = document.getElementById("materialCap");
+        
+        // 定義材質對應的數值
+        let materialValues = {
+            "K342I": 9.5,
+            "K342H": 9.5,            
+            "K32": 9.5,
+            "K30": 7,
+            "K302S": 9,
+            "K262": 9,
+            "K322": 8,
+            "K88": 4,
+            "K272-2": 3,
+            "K222": 3,
+            
+            "K252": 2,
+            
+            "K272-5": 5,
+                        
+            "X253": 15,
+            
+            "K212W": 15,
+            "K257": 7,
+            "Y831": 5,
+            "Y283": 9,
+            "Y293": 9
+        };
+        
+        // 設定對應的數值
+        if (materialValues.hasOwnProperty(material)) {
+            numDivInput.value = materialValues[material];
+        }
+        
+        if (material == "K342I") {
+        	materialCap.innerHTML = "10桶（通常算9.5）";
+        }
+        else if (material == "K342H")	{
+	        materialCap.innerHTML = "10桶（通常算9.5）";
+	    }
+	    else if (material == "K252") {
+	        materialCap.innerHTML = "第一顆2桶，第二顆開始2.3";	    
+	    }
+	    else {
+	    materialCap.innerHTML = "";	    
+	    }
+	    
+	    calculateRemaining();
+	}	
 </script>
 
 <html>
@@ -121,15 +254,40 @@
 							<label id="ruleBelow15" style="color: red;">＊15um(含)以下：2000米</label>     
 							<br>    
 							<div class="divider"></div>
-							<a>選擇材質：</a>
+							<a>選擇材質：</a><label id="materialCap" style="color: blue;">10桶（通常算9.5）</label>
 							<select id="material" onchange="updateRules()">
-								<option value="K342">K342</option>
+								<option value="K342I">K342(配方I)</option>							
+								<option value="K342H">K342(配方H)</option>							
+																
+								<option value="K32">K32</option>
+								<option value="K30">K30</option>
+								<option value="K302S">K302S</option>																
+								<option value="K262">K262</option>
+								<option value="K322">K322</option>
+																								
+								<option value="K88">K88</option>
+								<option value="K272-2">K272(機台48-2)</option>
+								<option value="K222">K222</option>
+								<option value="K252">K252</option>
+								
+								<option value="K272-5">K272(機台48-5)</option>
+								
+								<option value="X253">X253</option>
+								
+								<option value="K212W">K212W</option>
+								<option value="K257">K257</option>
+								
+								<option value="Y831">Y831</option>
+								<option value="Y283">Y283</option>
+								<option value="Y293">Y293</option>
 							</select>
 							<br><br>
 							<a>輸入顆數：</a>
 							<input type="number" id="num_pieces" min="1" onchange="calculateRemaining()">
-							<a>轉換成桶數的乘數：</a>
+							<a>轉換成桶數的乘數(不用修改，自動帶入)：</a>
 							<input type="number" id="multiplier" min="1" step="0.1" value="9.5" onchange="calculateRemaining()">
+							<br>
+							<label id="total_number" style="color: blue;"></label>
 							<br><br>
 							<button onclick="addInput()">新增輸入</button>						
 							<div id="inputContainer"></div>
